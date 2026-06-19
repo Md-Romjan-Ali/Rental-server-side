@@ -28,6 +28,7 @@ async function run() {
         const db = client.db("Property-Rental");
         const ownerCollection = db.collection('owner')
         const clientCollection = db.collection('client')
+        const bookingCollection = db.collection('booking')
 
         app.post("/api/ownerpost", async (req, res) => {
             const query = req.body;
@@ -55,6 +56,18 @@ async function run() {
             res.send(result)
         })
         // client says end
+        // BOOKING COODE
+        app.post('/api/postbooking', async (req, res) => {
+            const isExistBooking = await bookingCollection.findOne({
+                sessionId: bookings?.sessionId
+            })
+            if (isExistBooking) {
+                return isExistBooking
+            }
+            const cursor = req.body;
+            const result = await bookingCollection.insertOne(cursor)
+            res.send(result)
+        })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
