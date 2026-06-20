@@ -26,9 +26,26 @@ async function run() {
     try {
         await client.connect();
         const db = client.db("Property-Rental");
+        const userCollection = db.collection('user')
         const ownerCollection = db.collection('owner')
         const clientCollection = db.collection('client')
         const bookingCollection = db.collection('booking')
+        const favouriteCollection = db.collection('favourite')
+
+        // user start
+        app.get('/api/user', async (req, res) => {
+            const result = await userCollection.find().toArray()
+            res.send(result)
+        })
+        app.get('/api/owner', async (req, res) => {
+            const query = {}
+            if (req.query.role) {
+                query.role = req.query.role
+            }
+            const result = await userCollection.find(query).toArray()
+            res.send(result)
+        })
+        // user end
         // owner data start
         app.post("/api/ownerpost", async (req, res) => {
             const query = req.body;
@@ -47,7 +64,10 @@ async function run() {
             const result = await ownerCollection.find(query).toArray()
             res.send(result)
         })
-
+        app.get('/api/ownerpost', async (req, res) => {
+            const result = await ownerCollection.find().toArray()
+            res.send(result)
+        })
         app.get('/api/ownerpost/:id', async (req, res) => {
             const { id } = req.params
             const query = { _id: new ObjectId(id) }
@@ -67,6 +87,7 @@ async function run() {
             res.send(result)
         })
         // client says end
+
         // BOOKING COODE start
         app.post('/api/postbooking', async (req, res) => {
             // const isExistBooking = await bookingCollection.findOne({
@@ -79,6 +100,7 @@ async function run() {
             const result = await bookingCollection.insertOne(cursor)
             res.send(result)
         })
+
         app.get('/api/postbooking', async (req, res) => {
             const query = {}
             if (req.query.email) {
@@ -90,7 +112,26 @@ async function run() {
             const result = await bookingCollection.find(query).toArray()
             res.send(result)
         })
+        app.get('/api/postbooking', async (req, res) => {
+            const result = await bookingCollection.find().toArray()
+            res.send(result)
+        })
         // BOOKING COODE end
+        // add favourite start
+        app.post('/api/favourite', async (req, res) => {
+            const corsur = req.body
+            const result = await favouriteCollection.insertOne(corsur)
+            res.send(result)
+        })
+        app.get('/api/favourite', async (req, res) => {
+            const query = {}
+            if (req.query.userId) {
+                query.userId = req.query.userId
+            }
+            const result = await favouriteCollection.find(query).toArray()
+            res.send(result)
+        })
+        // add favourite end
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
