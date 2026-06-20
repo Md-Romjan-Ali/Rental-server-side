@@ -29,7 +29,7 @@ async function run() {
         const ownerCollection = db.collection('owner')
         const clientCollection = db.collection('client')
         const bookingCollection = db.collection('booking')
-
+        // owner data start
         app.post("/api/ownerpost", async (req, res) => {
             const query = req.body;
             const result = await ownerCollection.insertOne(query)
@@ -39,12 +39,23 @@ async function run() {
             const result = await ownerCollection.find().toArray()
             res.send(result)
         })
+        app.get('/api/ownerpost', async (req, res) => {
+            const query = {}
+            if (req.query.userId) {
+                query.userId = req.query.userId
+            }
+            const result = await ownerCollection.find(query).toArray()
+            res.send(result)
+        })
+
         app.get('/api/ownerpost/:id', async (req, res) => {
             const { id } = req.params
             const query = { _id: new ObjectId(id) }
             const result = await ownerCollection.findOne(query)
             res.send(result)
         })
+
+        // owner dta end
         // client says start
         app.post('/api/clientsays', async (req, res) => {
             const corsor = req.body
@@ -56,18 +67,30 @@ async function run() {
             res.send(result)
         })
         // client says end
-        // BOOKING COODE
+        // BOOKING COODE start
         app.post('/api/postbooking', async (req, res) => {
-            const isExistBooking = await bookingCollection.findOne({
-                sessionId: bookings?.sessionId
-            })
-            if (isExistBooking) {
-                return isExistBooking
-            }
+            // const isExistBooking = await bookingCollection.findOne({
+            //     sessionId: bookings?.sessionId
+            // })
+            // if (isExistBooking) {
+            //     return isExistBooking
+            // }
             const cursor = req.body;
             const result = await bookingCollection.insertOne(cursor)
             res.send(result)
         })
+        app.get('/api/postbooking', async (req, res) => {
+            const query = {}
+            if (req.query.email) {
+                query.userEmail = req.query.email
+            }
+            if (req.query.ownerId) {
+                query.ownerId = req.query.ownerId
+            }
+            const result = await bookingCollection.find(query).toArray()
+            res.send(result)
+        })
+        // BOOKING COODE end
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
