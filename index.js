@@ -25,7 +25,7 @@ const JWKS = createRemoteJWKSet(
     new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 )
 const verifyToken = async (req, res, next) => {
-    const authHeader = req.headers.authorizatoin
+    const authHeader = req.headers.authorization
     if (!authHeader) {
         return res.status(401).json({ message: "Unauthorized" })
     }
@@ -35,13 +35,28 @@ const verifyToken = async (req, res, next) => {
     }
     try {
         const { payload } = await jwtVerify(token, JWKS)
+        req.user = payload
         next()
     } catch (error) {
         return res.status(401).json({ message: 'Unauthorized' })
     }
 }
+const verifyOwner = (req, res, next) => {
+    if (req.user.role !== 'owner') {
+        return res.status(401).json({ message: 'Unauthorized' })
+    }
+    next()
+}
 const verifyTanant = (req, res, next) => {
-    console.log(req, 'from verifyTanat');
+    if (req.user.role !== 'tanant') {
+        return res.status(401).json({ message: 'Unuathorized' })
+    }
+    next()
+}
+const verifyAdmin = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(401).json({ message: 'Unauthorized' })
+    }
     next()
 }
 async function run() {
@@ -55,11 +70,11 @@ async function run() {
         const favouriteCollection = db.collection('favourite')
 
         // user start
-        app.get('/api/user', async (req, res) => {
+        app.get('/api/user', verifyToken, async (req, res) => {
             const result = await userCollection.find().toArray()
             res.send(result)
         })
-        app.get('/api/owner', async (req, res) => {
+        app.get('/api/owner', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.role) {
                 query.role = req.query.role
@@ -69,16 +84,16 @@ async function run() {
         })
         // user end
         // owner data start
-        app.post("/api/ownerpost", verifyToken, verifyTanant, async (req, res) => {
+        app.post("/api/ownerpost", verifyToken, async (req, res) => {
             const query = req.body;
             const result = await ownerCollection.insertOne(query)
             res.send(result)
         })
-        app.get('/api/ownerpost', async (req, res) => {
+        app.get('/api/ownerpost', verifyToken, async (req, res) => {
             const result = await ownerCollection.find().toArray()
             res.send(result)
         })
-        app.get('/api/ownerpost', async (req, res) => {
+        app.get('/api/ownerpost', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
@@ -86,7 +101,7 @@ async function run() {
             const result = await ownerCollection.find(query).toArray()
             res.send(result)
         })
-        app.get('/api/ownerpost', async (req, res) => {
+        app.get('/api/ownerpost', verifyToken, async (req, res) => {
             const result = await ownerCollection.find().toArray()
             res.send(result)
         })
@@ -111,7 +126,7 @@ async function run() {
         // client says end
 
         // BOOKING COODE start
-        app.post('/api/postbooking', async (req, res) => {
+        app.post('/api/postbooking', verifyToken, async (req, res) => {
             // const isExistBooking = await bookingCollection.findOne({
             //     sessionId: bookings?.sessionId
             // })
@@ -123,7 +138,7 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/api/postbooking', async (req, res) => {
+        app.get('/api/postbooking', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.email) {
                 query.userEmail = req.query.email
@@ -134,18 +149,18 @@ async function run() {
             const result = await bookingCollection.find(query).toArray()
             res.send(result)
         })
-        app.get('/api/postbooking', async (req, res) => {
+        app.get('/api/postbooking', verifyToken, async (req, res) => {
             const result = await bookingCollection.find().toArray()
             res.send(result)
         })
         // BOOKING COODE end
         // add favourite start
-        app.post('/api/favourite', async (req, res) => {
+        app.post('/api/favourite', verifyToken, async (req, res) => {
             const corsur = req.body
             const result = await favouriteCollection.insertOne(corsur)
             res.send(result)
         })
-        app.get('/api/favourite', async (req, res) => {
+        app.get('/api/favourite', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
