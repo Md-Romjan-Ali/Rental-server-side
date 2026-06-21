@@ -70,11 +70,11 @@ async function run() {
         const favouriteCollection = db.collection('favourite')
 
         // user start
-        app.get('/api/user', async (req, res) => {
+        app.get('/api/user', verifyToken, async (req, res) => {
             const result = await userCollection.find().toArray()
             res.send(result)
         })
-        app.get('/api/owner', async (req, res) => {
+        app.get('/api/owner', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.role) {
                 query.role = req.query.role
@@ -84,7 +84,7 @@ async function run() {
         })
         // user end
         // owner data start
-        app.post("/api/ownerpost", async (req, res) => {
+        app.post("/api/ownerpost", verifyToken, async (req, res) => {
             const query = req.body;
             const result = await ownerCollection.insertOne(query)
             res.send(result)
@@ -93,14 +93,16 @@ async function run() {
             const result = await ownerCollection.find().toArray()
             res.send(result)
         })
-        app.get('/api/ownerpost', async (req, res) => {
-            const { page = 1, limit = 9 } = req.query
+        app.get('/api/ownerlimidata', async (req, res) => {
+            const { page = 1, limit = 2 } = req.query
             const skip = (Number(page) - 1) * Number(limit)
-            const result = await ownerCollection.find().skip(skip).limit(Number(limit)).toArray()
-            res.send(result)
+            const result = await ownerCollection.find({ userId: req.user.id }).skip(skip).limit(Number(limit)).toArray()
+            const totalData = await ownerCollection.countDocuments({ userId: req.user.id })
+            const totalPage = Math.seil(totalData / Number(limit))
+            res.send({ data: result, page: Number(page), totalPage })
         })
 
-        app.get('/api/ownerpost', async (req, res) => {
+        app.get('/api/ownerdata', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
@@ -108,11 +110,8 @@ async function run() {
             const result = await ownerCollection.find(query).toArray()
             res.send(result)
         })
-        // app.get('/api/ownerpost', verifyToken, async (req, res) => {
-        //     const result = await ownerCollection.find().toArray()
-        //     res.send(result)
-        // })
-        app.get('/api/ownerpost/:id', async (req, res) => {
+
+        app.get('/api/ownerpost/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const query = { _id: new ObjectId(id) }
             const result = await ownerCollection.findOne(query)
@@ -121,7 +120,7 @@ async function run() {
 
         // owner dta end
         // client says start
-        app.post('/api/clientsays', async (req, res) => {
+        app.post('/api/clientsays', verifyToken, async (req, res) => {
             const corsor = req.body
             const reuslt = await clientCollection.insertOne(corsor)
             res.send(reuslt)
@@ -133,7 +132,7 @@ async function run() {
         // client says end
 
         // BOOKING COODE start
-        app.post('/api/postbooking', async (req, res) => {
+        app.post('/api/postbooking', verifyToken, async (req, res) => {
             // const isExistBooking = await bookingCollection.findOne({
             //     sessionId: bookings?.sessionId
             // })
@@ -145,7 +144,7 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/api/postbooking', async (req, res) => {
+        app.get('/api/postbooking', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.email) {
                 query.userEmail = req.query.email
@@ -156,18 +155,18 @@ async function run() {
             const result = await bookingCollection.find(query).toArray()
             res.send(result)
         })
-        app.get('/api/postbooking', async (req, res) => {
+        app.get('/api/postbooking', verifyToken, async (req, res) => {
             const result = await bookingCollection.find().toArray()
             res.send(result)
         })
         // BOOKING COODE end
         // add favourite start
-        app.post('/api/favourite', async (req, res) => {
+        app.post('/api/favourite', verifyToken, async (req, res) => {
             const corsur = req.body
             const result = await favouriteCollection.insertOne(corsur)
             res.send(result)
         })
-        app.get('/api/favourite', async (req, res) => {
+        app.get('/api/favourite', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
