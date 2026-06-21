@@ -90,7 +90,9 @@ async function run() {
             res.send(result)
         })
         app.get('/api/ownerpost', verifyToken, async (req, res) => {
-            const result = await ownerCollection.find().toArray()
+            const { page = 1, limit = 9 } = req.query
+            const skip = (Number(page) - 1) * Number(limit)
+            const result = await ownerCollection.find({ userId: req.query.id }).toArray()
             res.send(result)
         })
         app.get('/api/ownerpost', verifyToken, async (req, res) => {
@@ -101,10 +103,10 @@ async function run() {
             const result = await ownerCollection.find(query).toArray()
             res.send(result)
         })
-        app.get('/api/ownerpost', verifyToken, async (req, res) => {
-            const result = await ownerCollection.find().toArray()
-            res.send(result)
-        })
+        // app.get('/api/ownerpost', verifyToken, async (req, res) => {
+        //     const result = await ownerCollection.find().toArray()
+        //     res.send(result)
+        // })
         app.get('/api/ownerpost/:id', async (req, res) => {
             const { id } = req.params
             const query = { _id: new ObjectId(id) }
