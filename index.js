@@ -96,9 +96,9 @@ async function run() {
         app.get('/api/ownerlimidata', async (req, res) => {
             const { page = 1, limit = 2 } = req.query
             const skip = (Number(page) - 1) * Number(limit)
-            const result = await ownerCollection.find({ userId: req.user.id }).skip(skip).limit(Number(limit)).toArray()
-            const totalData = await ownerCollection.countDocuments({ userId: req.user.id })
-            const totalPage = Math.seil(totalData / Number(limit))
+            const result = await ownerCollection.find().skip(skip).limit(Number(limit)).toArray()
+            const totalData = await ownerCollection.countDocuments()
+            const totalPage = Math.ceil(totalData / Number(limit))
             res.send({ data: result, page: Number(page), totalPage })
         })
 
