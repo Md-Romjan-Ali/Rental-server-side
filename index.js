@@ -95,6 +95,7 @@ async function run() {
         })
         app.get('/api/ownerlimidata', async (req, res) => {
             const { page = 1, limit = 2 } = req.query
+
             const skip = (Number(page) - 1) * Number(limit)
             const result = await ownerCollection.find().skip(skip).limit(Number(limit)).toArray()
             const totalData = await ownerCollection.countDocuments()
@@ -102,7 +103,7 @@ async function run() {
             res.send({ data: result, page: Number(page), totalPage })
         })
 
-        app.get('/api/ownerdata', verifyToken, async (req, res) => {
+        app.get('/api/ownerdata', async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
@@ -111,7 +112,7 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/api/ownerpost/:id', verifyToken, async (req, res) => {
+        app.get('/api/ownerpost/:id', async (req, res) => {
             const { id } = req.params
             const query = { _id: new ObjectId(id) }
             const result = await ownerCollection.findOne(query)
@@ -159,6 +160,12 @@ async function run() {
             const result = await bookingCollection.find().toArray()
             res.send(result)
         })
+        app.delete('/api/my/booking/:id', verifyToken, async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const result = await bookingCollection.deleteOne(query)
+            res.send(result)
+        })
         // BOOKING COODE end
         // add favourite start
         app.post('/api/favourite', verifyToken, async (req, res) => {
@@ -172,6 +179,12 @@ async function run() {
                 query.userId = req.query.userId
             }
             const result = await favouriteCollection.find(query).toArray()
+            res.send(result)
+        })
+        app.delete('/api/my/favourite/:id', verifyToken, async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const result = await favouriteCollection.deleteOne(query)
             res.send(result)
         })
         // add favourite end
