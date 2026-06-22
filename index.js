@@ -74,6 +74,23 @@ async function run() {
             const result = await userCollection.find().toArray()
             res.send(result)
         })
+        app.patch('/api/updateuser/:id', async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const update = req.body
+            const result = await userCollection.updateOne(
+                query,
+                { $set: update }
+            )
+            res.send(result)
+        })
+        app.delete('/api/deleteuser/:id', async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
+
+        })
         app.get('/api/owner', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.role) {
@@ -85,7 +102,10 @@ async function run() {
         // user end
         // owner data start
         app.post("/api/ownerpost", verifyToken, async (req, res) => {
-            const query = req.body;
+            const query = {
+                ...req.body,
+                createdAt: new Date()
+            };
             const result = await ownerCollection.insertOne(query)
             res.send(result)
         })
@@ -161,7 +181,6 @@ async function run() {
                 productId: cursor.productId,
                 userEmail: cursor.userEmail
             })
-            console.log(isExistBooking, 'bro');
             if (isExistBooking) {
                 return res.send(isExistBooking)
             }
