@@ -94,11 +94,17 @@ async function run() {
             res.send(result)
         })
         app.get('/api/ownerlimidata', async (req, res) => {
+            const query = {}
+            if (req.query.search) {
+                query.$or = [
+                    { propertyName: { $regex: req.query.search, $options: 'i' } },
+                    { location: { $regex: req.query.search, $options: 'i' } }
+                ]
+            }
             const { page = 1, limit = 2 } = req.query
-
             const skip = (Number(page) - 1) * Number(limit)
-            const result = await ownerCollection.find().skip(skip).limit(Number(limit)).toArray()
-            const totalData = await ownerCollection.countDocuments()
+            const result = await ownerCollection.find(query).skip(skip).limit(Number(limit)).toArray()
+            const totalData = await ownerCollection.countDocuments(query)
             const totalPage = Math.ceil(totalData / Number(limit))
             res.send({ data: result, page: Number(page), totalPage })
         })
@@ -126,8 +132,12 @@ async function run() {
         })
         app.patch("/api/updateowner/:id", verifyToken, async (req, res) => {
             const { id } = req.params;
-
-            const result = await ownerCollection.updateOne(query)
+            const query = { _id: new ObjectId(id) }
+            const update = req.body
+            const result = await ownerCollection.updateOne(
+                query,
+                { $set: update }
+            )
             res.send(result)
         })
         // owner dta end
@@ -145,13 +155,17 @@ async function run() {
 
         // BOOKING COODE start
         app.post('/api/postbooking', verifyToken, async (req, res) => {
-            // const isExistBooking = await bookingCollection.findOne({
-            //     sessionId: bookings?.sessionId
-            // })
-            // if (isExistBooking) {
-            //     return isExistBooking
-            // }
             const cursor = req.body;
+            const isExistBooking = await bookingCollection.findOne({
+
+                productId: cursor.productId,
+                userEmail: cursor.userEmail
+            })
+            console.log(isExistBooking, 'bro');
+            if (isExistBooking) {
+                return res.send(isExistBooking)
+            }
+
             const result = await bookingCollection.insertOne(cursor)
             res.send(result)
         })
