@@ -111,6 +111,12 @@ async function run() {
             const result = await ownerCollection.find(query).toArray()
             res.send(result)
         })
+        app.delete('/api/ownerdata/:id', async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const result = await ownerCollection.deleteOne(query)
+            res.send(result)
+        })
 
         app.get('/api/ownerpost/:id', async (req, res) => {
             const { id } = req.params
@@ -118,7 +124,12 @@ async function run() {
             const result = await ownerCollection.findOne(query)
             res.send(result)
         })
+        app.patch("/api/updateowner/:id", verifyToken, async (req, res) => {
+            const { id } = req.params;
 
+            const result = await ownerCollection.updateOne(query)
+            res.send(result)
+        })
         // owner dta end
         // client says start
         app.post('/api/clientsays', verifyToken, async (req, res) => {
@@ -154,6 +165,17 @@ async function run() {
                 query.ownerId = req.query.ownerId
             }
             const result = await bookingCollection.find(query).toArray()
+            res.send(result)
+        })
+        app.patch('/api/postbooking/:id', async (req, res) => {
+            const { id } = req.params
+
+            console.log(id, 'from patch');
+            const update = req.body
+            const result = await bookingCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: update }
+            )
             res.send(result)
         })
         app.get('/api/postbooking', verifyToken, async (req, res) => {
