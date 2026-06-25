@@ -61,13 +61,14 @@ const verifyAdmin = (req, res, next) => {
 }
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
         const db = client.db("Property-Rental");
         const userCollection = db.collection('user')
         const ownerCollection = db.collection('owner')
         const clientCollection = db.collection('client')
         const bookingCollection = db.collection('booking')
         const favouriteCollection = db.collection('favourite')
+        const rejectFromAdminCollection = db.collection('reject')
 
         // user start
         app.get('/api/user', verifyToken, async (req, res) => {
@@ -113,21 +114,115 @@ async function run() {
             const result = await ownerCollection.find().toArray()
             res.send(result)
         })
+        // app.get('/api/ownerlimidata', async (req, res) => {
+        //     const query = {}
+        //     if (req.query.search) {
+        //         query.$or = [
+        //             { location: { $regex: req.query.search, $options: 'i' } },
+        //             { propertyType: { $regex: req.query.search, $options: 'i' } }
+        //         ]
+        //     }
+
+        //     const { page = 1, limit = 4, sortBy = 'monthlyRent', order = 'desc' } = req.query
+        //     const orderSortedBy = {
+        //         [sortBy]: order === 'desc' ? -1 : 1
+        //     }
+        //     console.log(order);
+        //     const skip = (Number(page) - 1) * Number(limit)
+        //     const result = await ownerCollection.find(query).sort(orderSortedBy).skip(skip).limit(Number(limit)).toArray()
+        //     const totalData = await ownerCollection.countDocuments(query)
+        //     const totalPage = Math.ceil(totalData / Number(limit))
+        //     res.send({ data: result, page: Number(page), totalPage })
+        // })
+
         app.get('/api/ownerlimidata', async (req, res) => {
-            const query = {}
-            if (req.query.search) {
-                query.$or = [
-                    { propertyName: { $regex: req.query.search, $options: 'i' } },
-                    { location: { $regex: req.query.search, $options: 'i' } }
-                ]
+            try {
+                // Search query
+                let query = {};
+
+                if (req.query.search) {
+                    query = {
+                        $or: [
+                            {
+                                location: {
+                                    $regex: req.query.search,
+                                    $options: 'i'
+                                }
+                            },
+                            {
+                                propertyType: {
+                                    $regex: req.query.search,
+                                    $options: 'i'
+                                }
+                            }
+                        ]
+                    };
+                }
+
+                // Pagination
+                const page = Number(req.query.page) || 1;
+                const limit = Number(req.query.limit) || 9;
+                const skip = (page - 1) * limit;
+
+                // Sorting
+                const sortBy = req.query.sortBy || 'monthlyRent';
+                const order = req.query.order || 'desc';
+
+                let sortOrder;
+
+                if (order === 'desc') {
+                    sortOrder = -1;
+                } else {
+                    sortOrder = 1;
+                }
+
+                let result;
+
+                // monthlyRent string
+                if (sortBy === 'monthlyRent') {
+                    result = await ownerCollection.aggregate([
+                        {
+                            $match: query
+                        },
+                        {
+                            $addFields: {
+                                rentNumber: {
+                                    $toDouble: "$monthlyRent"
+                                }
+                            }
+                        },
+                        { $sort: { rentNumber: sortOrder } },
+                        { $skip: skip },
+                        { $limit: limit }
+                    ]).toArray();
+                } else {
+                    result = await ownerCollection
+                        .find(query)
+                        .sort({ [sortBy]: sortOrder })
+                        .skip(skip)
+                        .limit(limit)
+                        .toArray();
+                }
+
+                // Total documents
+                const totalData = await ownerCollection.countDocuments(query);
+
+                // Total pages
+                const totalPage = Math.ceil(totalData / limit);
+
+                res.send({
+                    data: result,
+                    page,
+                    totalPage
+                });
+
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({
+                    message: 'Something went wrong'
+                });
             }
-            const { page = 1, limit = 2 } = req.query
-            const skip = (Number(page) - 1) * Number(limit)
-            const result = await ownerCollection.find(query).skip(skip).limit(Number(limit)).toArray()
-            const totalData = await ownerCollection.countDocuments(query)
-            const totalPage = Math.ceil(totalData / Number(limit))
-            res.send({ data: result, page: Number(page), totalPage })
-        })
+        });
 
         app.get('/api/ownerdata', async (req, res) => {
             const query = {}
@@ -243,7 +338,19 @@ async function run() {
             res.send(result)
         })
         // add favourite end
-        await client.db("admin").command({ ping: 1 });
+        // reject message start
+        app.post('/api/rejectowner', async (req, res) => {
+            const corsur = req.body;
+            const result = await rejectFromAdminCollection.insertOne(corsur)
+            res.send(result)
+        })
+        app.get('/api/rejectowner', async (req, res) => {
+            const title = req.query.title
+            const result = await rejectFromAdminCollection.findOne({ title })
+            res.send(result)
+        })
+        // reject messga end
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
